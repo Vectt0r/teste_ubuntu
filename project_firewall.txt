@@ -1,0 +1,86 @@
+
+import org.pcap4j.core.*;
+import org.pcap4j.packet.*;
+
+public class SimpleFirewall {
+
+    public static void main(String[] args) {
+        try {
+            // Obtém a interface de rede pelo nome (substitua "your_network_interface_name" pelo nome da sua interface)
+            PcapNetworkInterface networkInterface = Pcaps.getDevByName("your_network_interface_name");
+            
+            // Abre uma alça (handle) para capturar pacotes
+            PcapHandle handle = networkInterface.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, 10);
+
+            // Loop infinito para capturar e processar pacotes continuamente
+            while (true) {
+                // Obtém o próximo pacote
+                Packet packet = handle.getNextPacketEx();
+                
+                // Processa o pacote
+                processPacket(packet);
+            }
+        } catch (PcapNativeException | NotOpenException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Método para processar um pacote
+    private static void processPacket(Packet packet) {
+        // Verifica se o pacote é um pacote IPv4
+        if (packet instanceof IpV4Packet) {
+            // Converte o pacote para um pacote IPv4
+            IpV4Packet ipV4Packet = (IpV4Packet) packet;
+            
+            // Obtém os endereços IP de origem e destino
+            String sourceIp = ipV4Packet.getHeader().getSrcAddr().getHostAddress();
+            String destinationIp = ipV4Packet.getHeader().getDstAddr().getHostAddress();
+
+            // Verifica se o pacote é um pacote TCP
+            if (packet instanceof TcpPacket) {
+                // Converte o pacote para um pacote TCP
+                TcpPacket tcpPacket = (TcpPacket) packet;
+                
+                // Obtém as portas de origem e destino do pacote TCP
+                int sourcePort = tcpPacket.getHeader().getSrcPort().valueAsInt();
+                int destinationPort = tcpPacket.getHeader().getDstPort().valueAsInt();
+
+                // Adicione suas regras de filtragem aqui
+                if (destinationPort == 80) {
+                    // Bloqueia o pacote se a porta de destino for 80 (HTTP)
+                    System.out.println("Pacote bloqueado: " + sourceIp + ":" + sourcePort + " -> " + destinationIp + ":" + destinationPort);
+                } else {
+                    // Permite o pacote para outras portas de destino
+                    System.out.println("Pacote permitido: " + sourceIp + ":" + sourcePort + " -> " + destinationIp + ":" + destinationPort);
+                }
+            }
+        }
+    }
+}
+
+
+
+Aqui está uma explicação detalhada do código:
+
+Importações:
+
+Importa classes necessárias da biblioteca pcap4j para lidar com a captura e análise de pacotes.
+Classe SimpleFirewall:
+
+Declaração da classe principal.
+Método main:
+
+Este é o método principal que inicia a execução do programa.
+Tenta obter a interface de rede especificada pelo nome usando Pcaps.getDevByName.
+Abre uma alça (handle) para capturar pacotes com networkInterface.openLive.
+Entra em um loop infinito para capturar e processar pacotes continuamente.
+Chama o método processPacket para cada pacote capturado.
+Método processPacket:
+
+Este método recebe um pacote como parâmetro e processa suas informações.
+Verifica se o pacote é um pacote IPv4 usando instanceof.
+Converte o pacote para um pacote IPv4 e obtém os endereços IP de origem e destino.
+Verifica se o pacote é um pacote TCP usando instanceof.
+Converte o pacote para um pacote TCP e obtém as portas de origem e destino.
+Adiciona regras de filtragem específicas no trecho comentado para bloquear ou permitir pacotes com base na porta de destino.
+Exibe informações sobre o pacote no console.
